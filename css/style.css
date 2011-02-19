@@ -257,11 +257,11 @@ button {  width: auto; overflow: visible; }
   h2, h3{ page-break-after: avoid; }
 }
 
-table#people {
+table#locations {
   width:100%;
   text-align:center;
 }
 
-#people-template {
+#location-template {
   display:none;
 }

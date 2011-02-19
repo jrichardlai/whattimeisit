@@ -6,6 +6,54 @@ var infoWindow = new google.maps.InfoWindow();
 var geocoder = new google.maps.Geocoder();
 var map;
 var markersArray = [];
+var locationsArray = new Object();
+
+// create Date object for current location
+d = new Date();
+var current_time      = d.getTime();
+var current_offset    = -d.getTimezoneOffset() / 60;
+var time_difference   = 0;
+var date_format       = 'yyyy-MM-dd HH:mm';
+
+LocationRow = $.klass({
+  initialize: function(marker){
+    var self                = this;
+    this.marker             = marker;
+    this.id                 = $(this.element).attr('id');
+    this.name               = marker.title;
+    this.marker.item_row    = self;
+    this.is_reference       = false;
+    locationsArray[this.id] = this;
+  },
+  updateTime: function(){
+    this.time = time_difference + (3600000 * (this.offset - current_offset)) + current_time;
+    var text_date = formatDate(new Date(this.time), date_format)
+    $('.time input', this.element).val(text_date);
+    log(this.info_window_content);
+    $('.time', this.info_window_content).html(text_date);
+  },
+  setName: function(name){
+    this.name = name;
+    $('.name input', this.element).val(name);
+    $('.name', this.info_window_content).html(name);
+  },
+  updateContent: function(){
+    this.offset = parseInt(this.marker.timezone.rawOffset);
+
+    $('.name input', this.element).val(this.name);
+    $('.address', this.element).text(this.marker.address.city + ', ' + this.marker.address.country);
+    $('.timezone', this.element).text(this.marker.timezone.timezoneId);
+    $('.time input', this.element).attr({'raw-offset': this.marker.timezone.rawOffset, 'real-time': this.marker.timezone.time})
+    $(this.element).css('display', '');
+
+    this.updateTime();
+  },
+  setAsReference: function(){
+    this.is_reference = true;
+    current_time      = this.time;
+    current_offset    = this.offset;
+  }
+});
 
 $(document).ready(function(){
 
@@ -25,6 +73,20 @@ $(document).ready(function(){
     var current_user_point  = new google.maps.LatLng(geolocation.latitude, geolocation.longitude);
     var current_user_marker = createUserMarker(map, current_user_point, "Me");
   })
+
+  $('.time input').live('change', function(){
+    //TODO Verify that the date is valid
+
+    time_difference = getDateFromFormat($(this).val(), date_format) - getDateFromFormat($(this).attr('real-time'), date_format);
+    log({time_difference: time_difference, 'real-time': $(this).attr('real-time'), current_time: current_time, val: $(this).val()});
+    $.each(locationsArray, function(index, element){
+      element.updateTime();
+    })
+  });
+
+  $('.name input').live('change', function(){
+    locationsArray[$(this).parents('.location').first().attr('id')].setName($(this).val());
+  });
 });
 
 function getTimeZoneRequestUrl(marker) {
@@ -51,35 +113,30 @@ function getCountryCity(result) {
   return address;
 }
 
-function updateItemInList(marker){
-  item = marker.itemInList;
-  $('.name', item).text(marker.title);
-  $('.location input', item).val(marker.address.city + ', ' + marker.address.country);
-  $('.timezone', item).text(marker.timezone.timezoneId);
-  $('.time input', item).val(marker.timezone.time);
-  $(item).css('display', '');
-}
 function createItemInList(marker) {
-  var item = $('#people-template').clone();
-  $(item).attr('id', "marker-"+ marker.__gm_id);
-  $(item).css('display', 'none');
-  marker.itemInList = item;
-  // item.attr('id', "marker-" + marker.id);
-  $('#people tbody').append(item);
+  var item = $('#location-template').clone().
+              attr('id', "marker-"+ marker.__gm_id).
+              css('display', 'none');
+
+  //Attach the class LocationRow
+  $(item).attach(LocationRow, marker);
+  $('#locations tbody').append(item);
 }
 
-function updateInfoWindowContent(marker, infowindow) {
+function updateInfoWindowContent(marker, info_window) {
   geocoder.geocode( { 'latLng': marker.getPosition() }, function(results, status) {
     if (status == google.maps.GeocoderStatus.OK) {
       var address = getCountryCity(results[0]);
       marker.address = address;
       $.getJSON(getTimeZoneRequestUrl(marker), function(response){
         marker.timezone = response.query.results.geonames.timezone;
-        infowindow.setContent(marker.title + ' @ ' + address.city + ", " + address.country +
+        info_window_content = $('<div><span class="name">' + marker.title + '</span> @ ' + address.city + ", " + address.country +
         '<br/> Timezone : ' + marker.timezone.timezoneId +
-        '<br/> Local Time : ' + marker.timezone.time);
-        infowindow.open(map, marker);
-        updateItemInList(marker);
+        '<br/> Local Time : <span class="time">' + marker.timezone.time + '</span></div>');
+        info_window.setContent(info_window_content.get(0));
+        info_window.open(map, marker);
+        marker.item_row.info_window_content = info_window_content;
+        marker.item_row.updateContent();
       })
     } else {
       log("Geocode was not successful for the following reason: " + status);
@@ -87,36 +144,34 @@ function updateInfoWindowContent(marker, infowindow) {
   });
 }
 
-function attachInfoWindow(marker, name) {
-  var infowindow = new google.maps.InfoWindow();
-  updateInfoWindowContent(marker, infowindow);
-
+function attachInfoWindow(marker) {
+  var info_window = new google.maps.InfoWindow();
   google.maps.event.addListener(marker, 'click', function() {
-    infowindow.open(map, marker);
+    info_window.open(map, marker);
   });
   google.maps.event.addListener(marker, "dragstart", function() {
-    infowindow.close(map, marker);
+    info_window.close(map, marker);
   });
   google.maps.event.addListener(marker, "dragend", function() {
-    updateInfoWindowContent(marker, infowindow);
+    updateInfoWindowContent(marker, info_window);
   });
+  return info_window;
 }
 
 function createUserMarker(map, point, name) {
   // Create a lettered icon for this point using our icon class
-  // var userIcon = new Icon(baseIcon);
-  // userIcon.image = "http://google-maps-icons.googlecode.com/files/waterfall.png";
-
-  // Set up our GMarkerOptions object
   marker = new google.maps.Marker({ draggable: true,
                                     map: map,
                                     position: point,
                                     icon: "http://google-maps-icons.googlecode.com/files/waterfall.png",
                                     title: name
                                    });
-  attachInfoWindow(marker, name);
   createItemInList(marker);
+  info_window = attachInfoWindow(marker);
+  updateInfoWindowContent(marker, info_window, set_to_reference);
+
   markersArray.push(marker);
+  return marker;
 }
 
 // Shows any overlays currently in the array
@@ -129,5 +184,5 @@ function showOverlays() {
 }
 
 function displayMenu(map, event){
-  createUserMarker(map, event.latLng, 'toto');
+  createUserMarker(map, event.latLng, 'New');
 }
