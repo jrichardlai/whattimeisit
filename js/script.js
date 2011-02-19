@@ -106,7 +106,7 @@ LocationRow = $.klass({
     this.updateTime();
   },
   updateAddress: function(address){
-    updateInfoWindowContent(this.marker, this.info_window, address);
+    updateInfoWindowContent(this.marker, this.info_window, {address: address});
     saveLocations();
   },
   setAsReference: function(){
@@ -134,7 +134,7 @@ $(document).ready(function(){
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
 
     google.maps.event.addListener(map, "rightclick", function(event) {
-      createUserMarker(map, event.latLng, {name: 'New'});
+      createUserMarker(map, {'latLng': event.latLng}, {name: 'New'});
     });
 
     if ($.cookie('map-locations')) {
@@ -142,9 +142,14 @@ $(document).ready(function(){
     }
     else {
       var current_user_point  = new google.maps.LatLng(geolocation.latitude, geolocation.longitude);
-      var current_user_marker = createUserMarker(map, current_user_point, {name: "Me"});
+      var current_user_marker = createUserMarker(map, {'latLng': current_user_point}, {name: "Me"});
     }
   })
+
+  $('#new_location').change(function(event) {
+    createUserMarker(map, {'address': $(this).val()}, {name: "New"});
+    $(this).val('');
+  });
 
   //Set the checkbox event for the realtime
   $('#realtime').change(function(event) {
@@ -177,7 +182,7 @@ function loadLocations(cookie_locations_array) {
   $.each(cookie_locations_array, function(index, element) {
     if (element.lat && element.lng) {
       var location_point  = new google.maps.LatLng(element.lat, element.lng);
-      var location_marker = createUserMarker(map, location_point, element);
+      var location_marker = createUserMarker(map, {'latLng': location_point}, element);
     }
   });
 }
@@ -208,22 +213,19 @@ function getCountryCity(result) {
   return address;
 }
 
-function createLocationRow(marker, info_window, config) {
+function createLocationRow(marker, info_window, location_row_config) {
   var item = $('#location-template').clone().
               attr('id', "marker-"+ marker.__gm_id).
               css('display', 'none');
 
   //Attach the class LocationRow
-  $(item).attach(LocationRow, marker, info_window, config);
+  $(item).attach(LocationRow, marker, info_window, location_row_config);
   $('#locations tbody').append(item);
 }
 
-function updateInfoWindowContent(marker, info_window, address) {
-  if (address)
-    geocode_options = { 'address': address }
-  else
-    geocode_options = { 'latLng': marker.getPosition() }
-  geocoder.geocode(geocode_options, function(results, status) {
+function updateInfoWindowContent(marker, info_window, geocoder_options) {
+  if (!geocoder_options) geocoder_options = {'latLng': marker.getPosition()};
+  geocoder.geocode(geocoder_options, function(results, status) {
     if (status == google.maps.GeocoderStatus.OK) {
       var address = getCountryCity(results[0]);
       marker.setPosition(results[0].geometry.location);
@@ -271,17 +273,16 @@ function attachInfoWindow(marker) {
 }
 
 // Create the user marker on the map for a location, passing a name as a param
-function createUserMarker(map, point, config) {
+function createUserMarker(map, geocoder_options, location_row_config) {
   // Create a lettered icon for this point using our icon class
   marker = new google.maps.Marker({ draggable: true,
                                     map: map,
-                                    position: point,
                                     icon: "http://google-maps-icons.googlecode.com/files/world.png",
-                                    title: config.name
+                                    title: location_row_config.name
                                    });
   info_window = attachInfoWindow(marker);
-  createLocationRow(marker, info_window, config);
-  updateInfoWindowContent(marker, info_window);
+  createLocationRow(marker, info_window, location_row_config);
+  updateInfoWindowContent(marker, info_window, geocoder_options);
 
   markersArray.push(marker);
   return marker;

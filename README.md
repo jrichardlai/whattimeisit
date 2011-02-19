@@ -10,5 +10,4 @@
 - To fix validate date in the datetime field.
 - Link to wikipedia timezone.
 - Button to clear all
-- Add search field
 - Do not display undefined
