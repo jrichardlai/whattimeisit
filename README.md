@@ -5,9 +5,6 @@
 - colorpicker
 
 ### TODO
-- Display a notice when clicking on save
-- Move the slider on the right of the datetime field.
-- Display the timezone offset
 - To fix bug when putting the marker in the water :)
 - To fix validate date in the datetime field.
 - Link to wikipedia timezone.

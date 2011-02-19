@@ -78,7 +78,14 @@ div.info-content {
 footer {
   margin:auto;
   width:80%;
+  vertical-align: middle;
 }
+
+footer span, footer img {
+  vertical-align: middle;
+  display:inline-block;
+}
+
 footer a:hover {
   color: #ffffff;
 }

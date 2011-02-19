@@ -48,7 +48,10 @@ LocationRow = $.klass({
                                                     dateFormat: 'yy-mm-dd',
                                                     showButtonPanel: false,
                                                     showTime: false,
-                                                    showCalendar: false});
+                                                    showCalendar: false,
+                                                    beforeShow: function(input, inst) {
+                                                      inst.dpDiv.css({'margin-top': -input.offsetHeight + 'px', 'margin-left': input.offsetWidth + 'px'});
+                                                    }});
     $('.time input', this.element).change(function(){
       //TODO Verify that the date is valid
 
@@ -93,7 +96,7 @@ LocationRow = $.klass({
 
     $('.name input', this.element).val(this.name);
     $('.address input', this.element).val(this.marker.address.city + ', ' + this.marker.address.country);
-    $('.timezone', this.element).text(displayTimezone(marker.timezone));
+    $('.timezone', this.element).text(displayTimezone(this.marker.timezone));
 
     $(this.element).css('display', '');
 
