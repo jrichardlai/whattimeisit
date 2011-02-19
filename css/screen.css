@@ -75,6 +75,18 @@ div.info-content {
   color: black;
 }
 
+footer {
+  margin:auto;
+  width:80%;
+}
+footer a:hover {
+  color: #ffffff;
+}
+
+#html5-link {
+  text-align:right;
+}
+
 h1, h2, h3, h4, h5 { font-weight: normal; text-transform: uppercase; }
 h1 { font-family: "InsolentRegular", Arial, sans-serif; text-shadow: 1px 1px 0px black, 2px 2px 0px #476871, 3px 3px 0px #476871, 4px 4px 0px #476871, 5px 5px 0px #476871, 6px 6px 0px #476871, 7px 7px 0px #476871; }
 h1 { font-size: 6em; line-height: 1.5; text-align: center; cursor: default; }
