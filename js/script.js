@@ -70,7 +70,7 @@ LocationRow = $.klass({
     });
 
     $('a.delete', this.element).click(function(){
-      self.delete();
+      self.destroy();
     });
   },
   updateTime: function(){
@@ -114,7 +114,7 @@ LocationRow = $.klass({
     current_time      = this.time;
     current_offset    = this.offset;
   },
-  delete: function(){
+  destroy: function(){
     $(this.element).remove();
     this.marker.setMap(null);
     delete locationsArray[this.id];

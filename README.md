@@ -5,6 +5,7 @@
 - colorpicker
 
 ### TODO
+- Share locations with url
 - To fix bug when putting the marker in the water :)
 - To fix validate date in the datetime field.
 - Link to wikipedia timezone.
