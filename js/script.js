@@ -66,7 +66,7 @@ LocationRow = $.klass({
       self.updateAddress($(this).val());
     });
 
-    $('a.delete', this.element).change(function(){
+    $('a.delete', this.element).click(function(){
       self.delete();
     });
   },
