@@ -28,7 +28,7 @@ LocationRow = $.klass({
   updateTime: function(){
     this.time = time_difference + (3600000 * (this.offset - current_offset)) + current_time;
     var text_date = formatDate(new Date(this.time), date_format)
-    $('.time input', this.element).val(text_date);
+    $('.time input', this.element).val(text_date).data('old-value', text_date);
     log(this.info_window_content);
     $('.time', this.info_window_content).html(text_date);
   },
@@ -43,7 +43,7 @@ LocationRow = $.klass({
     $('.name input', this.element).val(this.name);
     $('.address', this.element).text(this.marker.address.city + ', ' + this.marker.address.country);
     $('.timezone', this.element).text(this.marker.timezone.timezoneId);
-    $('.time input', this.element).attr({'raw-offset': this.marker.timezone.rawOffset, 'real-time': this.marker.timezone.time})
+
     $(this.element).css('display', '');
 
     this.updateTime();
@@ -86,8 +86,7 @@ $(document).ready(function(){
 
   $('.time input').live('change', function(){
     //TODO Verify that the date is valid
-
-    time_difference = getDateFromFormat($(this).val(), date_format) - getDateFromFormat($(this).attr('real-time'), date_format);
+    time_difference = time_difference + getDateFromFormat($(this).val(), date_format) - getDateFromFormat($(this).data('old-value'), date_format);
     log({time_difference: time_difference, 'real-time': $(this).attr('real-time'), current_time: current_time, val: $(this).val()});
     $.each(locationsArray, function(index, element){
       element.updateTime();
