@@ -93,7 +93,7 @@ LocationRow = $.klass({
 
     $('.name input', this.element).val(this.name);
     $('.address input', this.element).val(this.marker.address.city + ', ' + this.marker.address.country);
-    $('.timezone', this.element).text(this.marker.timezone.timezoneId);
+    $('.timezone', this.element).text(displayTimezone(marker.timezone));
 
     $(this.element).css('display', '');
 
@@ -231,7 +231,7 @@ function updateInfoWindowContent(marker, info_window, address) {
           marker.timezone = response.query.results.geonames.timezone;
           info_window_content = $('<div class="info-content"><span class="name">' + marker.item_row.name + '</span> @ ' +
           '<span class="address">' + address.city + ", " + address.country + '</span>' +
-          '<br/> Timezone : ' + marker.timezone.timezoneId +
+          '<br/> Timezone : ' + displayTimezone(marker.timezone) +
           '<br/> Local Time : <span class="time">' + marker.timezone.time + '</span></div>');
           info_window.setContent(info_window_content.get(0));
           info_window.open(map, marker);
@@ -244,6 +244,12 @@ function updateInfoWindowContent(marker, info_window, address) {
       log("Geocode was not successful for the following reason: " + status);
     }
   });
+}
+
+function displayTimezone(timezone) {
+  offset = parseInt(timezone.rawOffset)
+  offset = offset > 0 ? '+' + offset : offset
+  return timezone.timezoneId +  ', GMT' + offset
 }
 
 // Attach the info window to a marker
