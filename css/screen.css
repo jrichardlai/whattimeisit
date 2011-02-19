@@ -36,7 +36,6 @@ table#locations tbody tr td {
   vertical-align: middle;
 }
 
-
 #location-template {
   display:none;
 }
@@ -61,6 +60,11 @@ input[type=text] {
 
 .info-content span.name, .info-content span.time {
   font-weight:bold;
+}
+
+.info {
+  font-style:italic;
+  font-size:0.9em;
 }
 
 .awesome {

@@ -14,7 +14,7 @@ var current_time      = d.getTime();
 var current_offset    = -d.getTimezoneOffset() / 60;
 var time_difference   = 0;
 var date_format       = 'yyyy-MM-dd HH:mm';
-
+var timeout           = null;
 //Use of the plugin lowpro.jquery.js
 LocationRow = $.klass({
   initialize: function(marker, info_window, config){
@@ -49,6 +49,26 @@ LocationRow = $.klass({
                                                     showButtonPanel: false,
                                                     showTime: false,
                                                     showCalendar: false});
+    $('.time input', this.element).change(function(){
+      //TODO Verify that the date is valid
+
+      time_difference = time_difference + getDateFromFormat($(this).val(), date_format) - getDateFromFormat($(this).data('old-value'), date_format);
+      $.each(locationsArray, function(index, element){
+        element.updateTime();
+      })
+    });
+
+    $('.name input', this.element).change(function(){
+      self.setName($(this).val());
+    });
+
+    $('.address input', this.element).change(function(){
+      self.updateAddress($(this).val());
+    });
+
+    $('a.delete', this.element).change(function(){
+      self.delete();
+    });
   },
   updateTime: function(){
     this.time = time_difference + (3600000 * (this.offset - current_offset)) + current_time;
@@ -120,6 +140,14 @@ $(document).ready(function(){
     }
   })
 
+  //Set the checkbox event for the realtime
+  $('#realtime').change(function(event) {
+    if ($(this).is(':checked'))
+      timeout = setTimeout("addMinute()", 60000);
+    else
+      clearTimeout(timeout);
+  });
+
   // Button to save the locations in the cookies
   $('#save_locations').click(function(){
     cookie_locations_array = []
@@ -133,31 +161,12 @@ $(document).ready(function(){
     $.cookie('map-locations', cookie_value);
   });
 
-  // Live events mapping
-  $('.time input').live('change', function(){
-    //TODO Verify that the date is valid
-
-    time_difference = time_difference + getDateFromFormat($(this).val(), date_format) - getDateFromFormat($(this).data('old-value'), date_format);
-    $.each(locationsArray, function(index, element){
-      element.updateTime();
-    })
-  });
-
-  // Add live event for the input name
-  $('.name input').live('change', function(){
-    locationsArray[$(this).parents('.location').first().attr('id')].setName($(this).val());
-  });
-
-  // Add live event for the input address
-  $('.address input').live('change', function(){
-    locationsArray[$(this).parents('.location').first().attr('id')].updateAddress($(this).val());
-  });
-
-  $('a.delete').live('click', function(){
-    locationsArray[$(this).parents('.location').first().attr('id')].delete();
-  });
-
 });
+
+function addMinute() {
+  $('.time input').last().val(formatDate(new Date(getDateFromFormat($('.time input').last().val(), date_format) + 60000), date_format)).trigger("change");
+  timeout = setTimeout("addMinute()", 60000);
+}
 
 function loadLocations(cookie_locations_array) {
   $.each(cookie_locations_array, function(index, element) {
