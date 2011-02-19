@@ -75,11 +75,13 @@ LocationRow = $.klass({
     var text_date = formatDate(new Date(this.time), date_format)
     $('.time input', this.element).val(text_date).data('old-value', text_date);
     $('.time', this.info_window_content).html(text_date);
+    saveLocations();
   },
   setName: function(name){
     this.name = name;
     $('.name input', this.element).val(name);
     $('.name', this.info_window_content).html(name);
+    saveLocations();
   },
   setColor: function(color){
     if (color) this.color = color;
@@ -102,6 +104,7 @@ LocationRow = $.klass({
   },
   updateAddress: function(address){
     updateInfoWindowContent(this.marker, this.info_window, address);
+    saveLocations();
   },
   setAsReference: function(){
     this.is_reference = true;
@@ -148,20 +151,19 @@ $(document).ready(function(){
       clearTimeout(timeout);
   });
 
-  // Button to save the locations in the cookies
-  $('#save_locations').click(function(){
-    cookie_locations_array = []
-    $.each(locationsArray, function(index, element) {
-      cookie_locations_array.push({ lng: element.marker.getPosition().lng(),
-                                    lat: element.marker.getPosition().lat(),
-                                    color: element.color,
-                                    name: element.name})
-    });
-    cookie_value = JSON.stringify(cookie_locations_array);
-    $.cookie('map-locations', cookie_value);
-  });
-
 });
+
+function saveLocations() {
+  cookie_locations_array = []
+  $.each(locationsArray, function(index, element) {
+    cookie_locations_array.push({ lng: element.marker.getPosition().lng(),
+                                  lat: element.marker.getPosition().lat(),
+                                  color: element.color,
+                                  name: element.name})
+  });
+  cookie_value = JSON.stringify(cookie_locations_array);
+  $.cookie('map-locations', cookie_value, { expires: 30 } );
+}
 
 function addMinute() {
   $('.time input').last().val(formatDate(new Date(getDateFromFormat($('.time input').last().val(), date_format) + 60000), date_format)).trigger("change");
