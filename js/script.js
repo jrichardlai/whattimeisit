@@ -52,6 +52,11 @@ LocationRow = $.klass({
     this.is_reference = true;
     current_time      = this.time;
     current_offset    = this.offset;
+  },
+  delete: function(){
+    $(this.element).remove();
+    this.marker.setMap(null);
+    delete locationsArray[this.id];
   }
 });
 
@@ -91,6 +96,10 @@ $(document).ready(function(){
 
   $('.name input').live('change', function(){
     locationsArray[$(this).parents('.location').first().attr('id')].setName($(this).val());
+  });
+
+  $('a.delete').live('click', function(){
+    locationsArray[$(this).parents('.location').first().attr('id')].delete();
   });
 
   $('#save_locations').click(function(){
