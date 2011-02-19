@@ -15,12 +15,15 @@ var current_offset    = -d.getTimezoneOffset() / 60;
 var time_difference   = 0;
 var date_format       = 'yyyy-MM-dd HH:mm';
 
+//Use of the plugin lowpro.jquery.js
 LocationRow = $.klass({
-  initialize: function(marker){
+  initialize: function(marker, info_window){
     var self                = this;
+    this.info_window        = info_window;
     this.marker             = marker;
     this.id                 = $(this.element).attr('id');
     this.name               = marker.title;
+    this.color              = '#'+(Math.random()*0xFFFFFF<<0).toString(16);
     this.marker.item_row    = self;
     this.is_reference       = false;
     locationsArray[this.id] = this;
@@ -37,16 +40,26 @@ LocationRow = $.klass({
     $('.name input', this.element).val(name);
     $('.name', this.info_window_content).html(name);
   },
+  setColor: function(color){
+    $('.name input', this.element).css('color', color || this.color);
+    $('.name', this.info_window_content).css('color', color || this.color);
+  },
   updateContent: function(){
     this.offset = parseInt(this.marker.timezone.rawOffset);
 
     $('.name input', this.element).val(this.name);
-    $('.address', this.element).text(this.marker.address.city + ', ' + this.marker.address.country);
+    $('.address input', this.element).val(this.marker.address.city + ', ' + this.marker.address.country);
     $('.timezone', this.element).text(this.marker.timezone.timezoneId);
 
     $(this.element).css('display', '');
 
+    //Show the header of the table
+    $('table#locations thead').show();
+
     this.updateTime();
+  },
+  updateAddress: function(address){
+    updateInfoWindowContent(this.marker, this.info_window, address);
   },
   setAsReference: function(){
     this.is_reference = true;
@@ -62,6 +75,7 @@ LocationRow = $.klass({
 
 $(document).ready(function(){
 
+  //Get the current geolocalisation
   g.request( function(geolocation){
     var myLatlng = new google.maps.LatLng(geolocation.latitude, geolocation.longitude);
     var myOptions = {
@@ -72,7 +86,7 @@ $(document).ready(function(){
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
 
     google.maps.event.addListener(map, "rightclick", function(event) {
-      displayMenu(map, event);
+      createUserMarker(map, event.latLng, 'New');
     });
 
     if ($.cookie('map-locations')) {
@@ -84,8 +98,22 @@ $(document).ready(function(){
     }
   })
 
+  // Button to save the locations in the cookies
+  $('#save_locations').click(function(){
+    cookie_locations_array = []
+    $.each(locationsArray, function(index, element) {
+      cookie_locations_array.push({ lng: element.marker.getPosition().lng(),
+                                    lat: element.marker.getPosition().lat(),
+                                    name: element.name})
+    });
+    cookie_value = JSON.stringify(cookie_locations_array);
+    $.cookie('map-locations', cookie_value);
+  });
+
+  // Live events mapping
   $('.time input').live('change', function(){
     //TODO Verify that the date is valid
+
     time_difference = time_difference + getDateFromFormat($(this).val(), date_format) - getDateFromFormat($(this).data('old-value'), date_format);
     log({time_difference: time_difference, 'real-time': $(this).attr('real-time'), current_time: current_time, val: $(this).val()});
     $.each(locationsArray, function(index, element){
@@ -93,22 +121,20 @@ $(document).ready(function(){
     })
   });
 
+  // Add live event for the input name
   $('.name input').live('change', function(){
     locationsArray[$(this).parents('.location').first().attr('id')].setName($(this).val());
+  });
+
+  // Add live event for the input address
+  $('.address input').live('change', function(){
+    locationsArray[$(this).parents('.location').first().attr('id')].updateAddress($(this).val());
   });
 
   $('a.delete').live('click', function(){
     locationsArray[$(this).parents('.location').first().attr('id')].delete();
   });
 
-  $('#save_locations').click(function(){
-    cookie_locations_array = []
-    $.each(locationsArray, function(index, element) {
-      cookie_locations_array.push({lng: element.marker.getPosition().lng(), lat: element.marker.getPosition().lat(), name: element.name})
-    });
-    cookie_value = JSON.stringify(cookie_locations_array);
-    $.cookie('map-locations', cookie_value);
-  });
 });
 
 function loadLocations(cookie_locations_array) {
@@ -121,6 +147,7 @@ function loadLocations(cookie_locations_array) {
   });
 }
 
+// Get the time zone from a marker using the yahooapis
 function getTimeZoneRequestUrl(marker) {
   return 'http://query.yahooapis.com/v1/public/yql?' +
   'q=select%20*%20from%20xml%20where%20url%3D"http%3A%2F%2Fws.geonames.org%2Ftimezone%3Flat%3D' +
@@ -128,6 +155,7 @@ function getTimeZoneRequestUrl(marker) {
   marker.getPosition().lng() + '"&format=json';
 }
 
+// Get the country and the city from a result of google geocoder
 function getCountryCity(result) {
   address = new Object();
   for ( i = 0; i < result.address_components.length; i++){
@@ -145,30 +173,40 @@ function getCountryCity(result) {
   return address;
 }
 
-function createItemInList(marker) {
+function createLocationRow(marker, info_window) {
   var item = $('#location-template').clone().
               attr('id', "marker-"+ marker.__gm_id).
               css('display', 'none');
 
   //Attach the class LocationRow
-  $(item).attach(LocationRow, marker);
+  $(item).attach(LocationRow, marker, info_window);
   $('#locations tbody').append(item);
 }
 
-function updateInfoWindowContent(marker, info_window) {
-  geocoder.geocode( { 'latLng': marker.getPosition() }, function(results, status) {
+function updateInfoWindowContent(marker, info_window, address) {
+  if (address)
+    geocode_options = { 'address': address }
+  else
+    geocode_options = { 'latLng': marker.getPosition() }
+  geocoder.geocode(geocode_options, function(results, status) {
     if (status == google.maps.GeocoderStatus.OK) {
       var address = getCountryCity(results[0]);
+      marker.setPosition(results[0].geometry.location);
       marker.address = address;
+      // Get the timezone values
       $.getJSON(getTimeZoneRequestUrl(marker), function(response){
-        marker.timezone = response.query.results.geonames.timezone;
-        info_window_content = $('<div><span class="name">' + marker.title + '</span> @ ' + address.city + ", " + address.country +
-        '<br/> Timezone : ' + marker.timezone.timezoneId +
-        '<br/> Local Time : <span class="time">' + marker.timezone.time + '</span></div>');
-        info_window.setContent(info_window_content.get(0));
-        info_window.open(map, marker);
-        marker.item_row.info_window_content = info_window_content;
-        marker.item_row.updateContent();
+        if (response.query.results) {
+          marker.timezone = response.query.results.geonames.timezone;
+          info_window_content = $('<div class="info-content"><span class="name">' + marker.item_row.name + '</span> @ ' +
+          '<span class="address">' + address.city + ", " + address.country + '</span>' +
+          '<br/> Timezone : ' + marker.timezone.timezoneId +
+          '<br/> Local Time : <span class="time">' + marker.timezone.time + '</span></div>');
+          info_window.setContent(info_window_content.get(0));
+          info_window.open(map, marker);
+          marker.item_row.info_window_content = info_window_content;
+          marker.item_row.updateContent();
+          marker.item_row.setColor();
+        }
       })
     } else {
       log("Geocode was not successful for the following reason: " + status);
@@ -176,6 +214,7 @@ function updateInfoWindowContent(marker, info_window) {
   });
 }
 
+// Attach the info window to a marker
 function attachInfoWindow(marker) {
   var info_window = new google.maps.InfoWindow();
   google.maps.event.addListener(marker, 'click', function() {
@@ -190,31 +229,19 @@ function attachInfoWindow(marker) {
   return info_window;
 }
 
+// Create the user marker on the map for a location, passing a name as a param
 function createUserMarker(map, point, name) {
   // Create a lettered icon for this point using our icon class
   marker = new google.maps.Marker({ draggable: true,
                                     map: map,
                                     position: point,
-                                    icon: "http://google-maps-icons.googlecode.com/files/waterfall.png",
+                                    icon: "http://google-maps-icons.googlecode.com/files/world.png",
                                     title: name
                                    });
-  createItemInList(marker);
   info_window = attachInfoWindow(marker);
+  createLocationRow(marker, info_window);
   updateInfoWindowContent(marker, info_window);
 
   markersArray.push(marker);
   return marker;
-}
-
-// Shows any overlays currently in the array
-function showOverlays() {
-  if (markersArray) {
-    for (i in markersArray) {
-      markersArray[i].setMap(map);
-    }
-  }
-}
-
-function displayMenu(map, event){
-  createUserMarker(map, event.latLng, 'New');
 }
