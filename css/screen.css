@@ -59,7 +59,7 @@ input[type=text] {
   font-weight:bold;
 }
 
-.info-content span.name {
+.info-content span.name, .info-content span.time {
   font-weight:bold;
 }
 

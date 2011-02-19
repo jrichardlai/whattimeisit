@@ -44,7 +44,11 @@ LocationRow = $.klass({
         self.setColor('#' + hex);
       }
     });
-
+    $('.time input', this.element).datetimepicker({ timeFormat: 'hh:mm',
+                                                    dateFormat: 'yy-mm-dd',
+                                                    showButtonPanel: false,
+                                                    showTime: false,
+                                                    showCalendar: false});
   },
   updateTime: function(){
     this.time = time_difference + (3600000 * (this.offset - current_offset)) + current_time;
