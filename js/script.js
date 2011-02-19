@@ -17,16 +17,34 @@ var date_format       = 'yyyy-MM-dd HH:mm';
 
 //Use of the plugin lowpro.jquery.js
 LocationRow = $.klass({
-  initialize: function(marker, info_window){
+  initialize: function(marker, info_window, config){
+    config                  = config || {};
     var self                = this;
     this.info_window        = info_window;
     this.marker             = marker;
     this.id                 = $(this.element).attr('id');
-    this.name               = marker.title;
-    this.color              = '#'+(Math.random()*0xFFFFFF<<0).toString(16);
+    this.name               = config.name || marker.title;
+    this.color              = config.color || '#'+(Math.random()*0xFFFFFF<<0).toString(16);
     this.marker.item_row    = self;
     this.is_reference       = false;
     locationsArray[this.id] = this;
+    $('.color-picker div', self.element).css('background-color', this.color);
+    $('.color-picker', this.element).ColorPicker({
+      color: self.color,
+      onShow: function (colpkr) {
+        $(colpkr).fadeIn(500);
+        return false;
+      },
+      onHide: function (colpkr) {
+        $(colpkr).fadeOut(500);
+        return false;
+      },
+      onChange: function (hsb, hex, rgb) {
+        $('.color-picker div', self.element).css('background-color', '#' + hex);
+        self.setColor('#' + hex);
+      }
+    });
+
   },
   updateTime: function(){
     this.time = time_difference + (3600000 * (this.offset - current_offset)) + current_time;
@@ -41,6 +59,7 @@ LocationRow = $.klass({
     $('.name', this.info_window_content).html(name);
   },
   setColor: function(color){
+    if (color) this.color = color;
     $('.name input', this.element).css('color', color || this.color);
     $('.name', this.info_window_content).css('color', color || this.color);
   },
@@ -86,7 +105,7 @@ $(document).ready(function(){
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
 
     google.maps.event.addListener(map, "rightclick", function(event) {
-      createUserMarker(map, event.latLng, 'New');
+      createUserMarker(map, event.latLng, {name: 'New'});
     });
 
     if ($.cookie('map-locations')) {
@@ -94,7 +113,7 @@ $(document).ready(function(){
     }
     else {
       var current_user_point  = new google.maps.LatLng(geolocation.latitude, geolocation.longitude);
-      var current_user_marker = createUserMarker(map, current_user_point, "Me");
+      var current_user_marker = createUserMarker(map, current_user_point, {name: "Me"});
     }
   })
 
@@ -104,6 +123,7 @@ $(document).ready(function(){
     $.each(locationsArray, function(index, element) {
       cookie_locations_array.push({ lng: element.marker.getPosition().lng(),
                                     lat: element.marker.getPosition().lat(),
+                                    color: element.color,
                                     name: element.name})
     });
     cookie_value = JSON.stringify(cookie_locations_array);
@@ -142,7 +162,7 @@ function loadLocations(cookie_locations_array) {
   $.each(cookie_locations_array, function(index, element) {
     if (element.lat && element.lng) {
       var location_point  = new google.maps.LatLng(element.lat, element.lng);
-      var location_marker = createUserMarker(map, location_point, element.name || "Unknown");
+      var location_marker = createUserMarker(map, location_point, element);
     }
   });
 }
@@ -173,13 +193,13 @@ function getCountryCity(result) {
   return address;
 }
 
-function createLocationRow(marker, info_window) {
+function createLocationRow(marker, info_window, config) {
   var item = $('#location-template').clone().
               attr('id', "marker-"+ marker.__gm_id).
               css('display', 'none');
 
   //Attach the class LocationRow
-  $(item).attach(LocationRow, marker, info_window);
+  $(item).attach(LocationRow, marker, info_window, config);
   $('#locations tbody').append(item);
 }
 
@@ -230,16 +250,16 @@ function attachInfoWindow(marker) {
 }
 
 // Create the user marker on the map for a location, passing a name as a param
-function createUserMarker(map, point, name) {
+function createUserMarker(map, point, config) {
   // Create a lettered icon for this point using our icon class
   marker = new google.maps.Marker({ draggable: true,
                                     map: map,
                                     position: point,
                                     icon: "http://google-maps-icons.googlecode.com/files/world.png",
-                                    title: name
+                                    title: config.name
                                    });
   info_window = attachInfoWindow(marker);
-  createLocationRow(marker, info_window);
+  createLocationRow(marker, info_window, config);
   updateInfoWindowContent(marker, info_window);
 
   markersArray.push(marker);

@@ -27,6 +27,8 @@
   <link rel="stylesheet" href="css/style.css?v=2">
   <link rel="stylesheet" href="css/screen.css">
   <link rel="stylesheet" href="css/awesome-buttons.css">
+  <link rel="stylesheet" href="css/colorpicker.css">
+  <link rel="stylesheet" href="css/colorpicker-layout.css">
 
   <!-- Uncomment if you are specifically targeting less enabled mobile browsers
   <link rel="stylesheet" media="handheld" href="css/handheld.css?v=2">  -->
@@ -48,6 +50,7 @@
       <table id="locations">
         <thead>
           <tr>
+            <th></th>
             <th>Name</th>
             <th>City, Country</th>
             <th>Timezone</th>
@@ -56,6 +59,7 @@
         </thead>
         <tbody>
           <tr id="location-template" class="location">
+            <td class="color-picker"><div></div></td>
             <td class="name"><input type="text"/></td>
             <td class="address"><input type="text" /></td>
             <td class="timezone"></td>
@@ -92,6 +96,12 @@
   <!-- scripts concatenated and minified via ant build script-->
   <script src="js/plugins.js"></script>
   <script src="js/script.js"></script>
+  <script type="text/javascript" src="js/mylibs/jquery.js"></script>
+  <script type="text/javascript" src="js/mylibs/colorpicker.js"></script>
+  <script type="text/javascript" src="js/mylibs/eye.js"></script>
+  <script type="text/javascript" src="js/mylibs/utils.js"></script>
+  <script type="text/javascript" src="js/mylibs/layout.js"></script>
+
   <!-- end concatenated and minified scripts-->
   <!--[if lt IE 7 ]>
   <script src="js/libs/dd_belatedpng.js"></script>

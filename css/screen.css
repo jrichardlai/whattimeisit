@@ -19,10 +19,31 @@ table#locations tbody {
   margin-top:10px;
 }
 
-table#locations thead tr th { margin-bottom:10px;}
+table#locations tbody tr {
+  height:36px;
+  vertical-align: middle;
+}
+
+table#locations tbody tr td:first-child {
+  vertical-align: text-bottom;
+}
+
+table td.name {
+  width:170px;
+}
+
+table#locations tbody tr td {
+  vertical-align: middle;
+}
+
 
 #location-template {
   display:none;
+}
+
+.color-picker div {
+  width:10px;
+  height:10px;
 }
 
 #informations {
@@ -34,6 +55,7 @@ input[type=text] {
   background-color:#CBE0CA;
   text-align:center;
   padding:1px;
+  height:25px;
 }
 
 .awesome {
