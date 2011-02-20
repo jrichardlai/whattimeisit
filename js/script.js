@@ -174,20 +174,20 @@ $(document).ready(function(){
 
   //Set the checkbox event for the realtime
   $('#realtime').change(function(event) {
-    if ($(this).is(':checked'))
-      timeout = setTimeout("addMinute()", 60000);
+    if ($(this).is(':checked')) {
+      //TODO change 60000 to get the real seconds
+      var d = new Date();
+      timeout = setTimeout("addMinute()", 60000 - d.getSeconds() * 1000);
+    }
     else
       clearTimeout(timeout);
   });
 
   //Set the checkbox event for the realtime
   $('#now').click(function(event) {
-    $('#realtime').attr('checked', 'checked');
-    $.each(locationsArray, function(key, location) {
-      log(key);
-      $('.time input', location.element).val(formatDate(calcTime(location.offset), date_format)).trigger('change');
-      return;
-    });
+    for (key in locationsArray) break;
+    $('.time input', locationsArray[key].element).val(formatDate(calcTime(locationsArray[key].offset), date_format)).trigger('change');
+    $('#realtime').attr('checked', 'checked').trigger('change');
   });
 
 });
@@ -195,9 +195,9 @@ $(document).ready(function(){
 // function to calculate local time
 // given the city's UTC offset
 function calcTime(offset) {
-  d = new Date();
-  utc = d.getTime() + (d.getTimezoneOffset() * 60000);
-  nd = new Date(utc + (3600000*offset));
+  var d = new Date();
+  var utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+  var nd = new Date(utc + (3600000*offset));
   return nd;
 }
 
