@@ -175,7 +175,6 @@ $(document).ready(function(){
   //Set the checkbox event for the realtime
   $('#realtime').change(function(event) {
     if ($(this).is(':checked')) {
-      //TODO change 60000 to get the real seconds
       var d = new Date();
       timeout = setTimeout("addMinute()", 60000 - d.getSeconds() * 1000);
     }
