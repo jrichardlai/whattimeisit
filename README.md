@@ -3,6 +3,7 @@
 - google maps API V3.
 - lowpro.jquery
 - colorpicker
+- awesome button
 
 ### TODO
 - Share locations with url
@@ -10,4 +11,3 @@
 - To fix validate date in the datetime field.
 - Link to wikipedia timezone.
 - Button to clear all
-- Do not display undefined

@@ -11,7 +11,7 @@ table#locations {
   border-collapse: collapse;
 }
 
-table#locations thead {
+table#locations thead, table#locations tfoot {
   display:none;
 }
 

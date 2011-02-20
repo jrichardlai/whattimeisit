@@ -78,7 +78,6 @@ LocationRow = $.klass({
     var text_date = formatDate(new Date(this.time), date_format)
     $('.time input', this.element).val(text_date).data('old-value', text_date);
     $('.time', this.info_window_content).html(text_date);
-    saveLocations();
   },
   setName: function(name){
     this.name = name;
@@ -95,13 +94,13 @@ LocationRow = $.klass({
     this.offset = parseInt(this.marker.timezone.rawOffset);
 
     $('.name input', this.element).val(this.name);
-    $('.address input', this.element).val(this.marker.address.city + ', ' + this.marker.address.country);
+    $('.address input', this.element).val(this.marker.address);
     $('.timezone', this.element).text(displayTimezone(this.marker.timezone));
 
     $(this.element).css('display', '');
 
     //Show the header of the table
-    $('table#locations thead').show();
+    $('table#locations thead, table#locations tfoot').show();
 
     this.updateTime();
   },
@@ -118,6 +117,28 @@ LocationRow = $.klass({
     $(this.element).remove();
     this.marker.setMap(null);
     delete locationsArray[this.id];
+  }
+});
+
+Address = $.klass({
+  initialize: function(address_components){
+    for ( i = 0; i < address_components.length; i++){
+      for (j = 0; j < address_components[i].types.length; j++){
+        switch (address_components[i].types[j]) {
+          case "country":
+          this.country = address_components[i].long_name
+          break;
+          case "locality":
+          this.city = address_components[i].long_name
+          break;
+        }
+      }
+    }
+  },
+  toString: function(){
+    if (this.city)
+    return this.city + ', ' + this.country;
+    return this.country;
   }
 });
 
@@ -159,11 +180,31 @@ $(document).ready(function(){
       clearTimeout(timeout);
   });
 
+  //Set the checkbox event for the realtime
+  $('#now').click(function(event) {
+    $('#realtime').attr('checked', 'checked');
+    $.each(locationsArray, function(key, location) {
+      log(key);
+      $('.time input', location.element).val(formatDate(calcTime(location.offset), date_format)).trigger('change');
+      return;
+    });
+  });
+
 });
+
+// function to calculate local time
+// given the city's UTC offset
+function calcTime(offset) {
+  d = new Date();
+  utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+  nd = new Date(utc + (3600000*offset));
+  return nd;
+}
 
 function saveLocations() {
   cookie_locations_array = []
   $.each(locationsArray, function(index, element) {
+    if (element.marker && element.marker.getPosition())
     cookie_locations_array.push({ lng: element.marker.getPosition().lng(),
                                   lat: element.marker.getPosition().lat(),
                                   color: element.color,
@@ -195,24 +236,6 @@ function getTimeZoneRequestUrl(marker) {
   marker.getPosition().lng() + '"&format=json';
 }
 
-// Get the country and the city from a result of google geocoder
-function getCountryCity(result) {
-  address = new Object();
-  for ( i = 0; i < result.address_components.length; i++){
-    for (j = 0; j < result.address_components[i].types.length; j++){
-      switch (result.address_components[i].types[j]) {
-        case "country":
-        address.country = result.address_components[i].long_name
-        break;
-        case "locality":
-        address.city = result.address_components[i].long_name
-        break;
-      }
-    }
-  }
-  return address;
-}
-
 function createLocationRow(marker, info_window, location_row_config) {
   var item = $('#location-template').clone().
               attr('id', "marker-"+ marker.__gm_id).
@@ -227,7 +250,7 @@ function updateInfoWindowContent(marker, info_window, geocoder_options) {
   if (!geocoder_options) geocoder_options = {'latLng': marker.getPosition()};
   geocoder.geocode(geocoder_options, function(results, status) {
     if (status == google.maps.GeocoderStatus.OK) {
-      var address = getCountryCity(results[0]);
+      var address = new Address(results[0].address_components);
       marker.setPosition(results[0].geometry.location);
       marker.address = address;
       // Get the timezone values
@@ -235,7 +258,7 @@ function updateInfoWindowContent(marker, info_window, geocoder_options) {
         if (response.query.results) {
           marker.timezone = response.query.results.geonames.timezone;
           info_window_content = $('<div class="info-content"><span class="name">' + marker.item_row.name + '</span> @ ' +
-          '<span class="address">' + address.city + ", " + address.country + '</span>' +
+          '<span class="address">' + address + '</span>' +
           '<br/> Timezone : ' + displayTimezone(marker.timezone) +
           '<br/> Local Time : <span class="time">' + marker.timezone.time + '</span></div>');
           info_window.setContent(info_window_content.get(0));
