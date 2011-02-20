@@ -89,6 +89,7 @@ LocationRow = $.klass({
     if (color) this.color = color;
     $('.name input', this.element).css('color', color || this.color);
     $('.name', this.info_window_content).css('color', color || this.color);
+    saveLocations();
   },
   updateContent: function(){
     this.offset = parseInt(this.marker.timezone.rawOffset);
@@ -103,6 +104,7 @@ LocationRow = $.klass({
     $('table#locations thead, table#locations tfoot').show();
 
     this.updateTime();
+    saveLocations();
   },
   updateAddress: function(address){
     updateInfoWindowContent(this.marker, this.info_window, {address: address});
@@ -117,6 +119,7 @@ LocationRow = $.klass({
     $(this.element).remove();
     this.marker.setMap(null);
     delete locationsArray[this.id];
+    saveLocations();
   }
 });
 
@@ -210,6 +213,7 @@ function saveLocations() {
                                   name: element.name})
   });
   cookie_value = JSON.stringify(cookie_locations_array);
+  log(cookie_value);
   $.cookie('map-locations', cookie_value, { expires: 30 } );
 }
 
@@ -305,7 +309,6 @@ function createUserMarker(map, geocoder_options, location_row_config) {
   info_window = attachInfoWindow(marker);
   createLocationRow(marker, info_window, location_row_config);
   updateInfoWindowContent(marker, info_window, geocoder_options);
-
   markersArray.push(marker);
   return marker;
 }
