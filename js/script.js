@@ -15,6 +15,8 @@ var current_offset    = -d.getTimezoneOffset() / 60;
 var time_difference   = 0;
 var date_format       = 'yyyy-MM-dd HH:mm';
 var timeout           = null;
+var cookie_locations_array;
+var cookie_location_index = 0;
 //Use of the plugin lowpro.jquery.js
 LocationRow = $.klass({
   initialize: function(marker, info_window, config){
@@ -155,9 +157,9 @@ $(document).ready(function(){
     google.maps.event.addListener(map, "rightclick", function(event) {
       createUserMarker(map, {'latLng': event.latLng}, {name: 'New'});
     });
-
-    if ($.cookie('map-locations')) {
-      loadLocations(JSON.parse($.cookie('map-locations')));
+    if ($.cookie('map-locations') && JSON.parse($.cookie('map-locations'))[0]) {
+      cookie_locations_array = JSON.parse($.cookie('map-locations'));
+      loadLocations();
     }
     else {
       var current_user_point  = new google.maps.LatLng(geolocation.latitude, geolocation.longitude);
@@ -219,13 +221,13 @@ function addMinute() {
   timeout = setTimeout("addMinute()", 60000);
 }
 
-function loadLocations(cookie_locations_array) {
-  $.each(cookie_locations_array, function(index, element) {
-    if (element.lat && element.lng) {
-      var location_point  = new google.maps.LatLng(element.lat, element.lng);
-      var location_marker = createUserMarker(map, {'latLng': location_point}, element);
-    }
-  });
+function loadLocations() {
+  element = cookie_locations_array[cookie_location_index];
+  var location_point  = new google.maps.LatLng(element.lat, element.lng);
+  var location_marker = createUserMarker(map, {'latLng': location_point}, element);
+  cookie_location_index++;
+  if (cookie_locations_array[cookie_location_index])
+  setTimeout("loadLocations()", 800);
 }
 
 // Get the time zone from a marker using the yahooapis
@@ -301,7 +303,8 @@ function createUserMarker(map, geocoder_options, location_row_config) {
   marker = new google.maps.Marker({ draggable: true,
                                     map: map,
                                     icon: "http://google-maps-icons.googlecode.com/files/world.png",
-                                    title: location_row_config.name
+                                    title: location_row_config.name,
+                                    animation: google.maps.Animation.DROP
                                    });
   info_window = attachInfoWindow(marker);
   createLocationRow(marker, info_window, location_row_config);
