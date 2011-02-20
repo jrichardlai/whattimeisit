@@ -83,13 +83,11 @@ LocationRow = $.klass({
     this.name = name;
     $('.name input', this.element).val(name);
     $('.name', this.info_window_content).html(name);
-    saveLocations();
   },
   setColor: function(color){
     if (color) this.color = color;
     $('.name input', this.element).css('color', color || this.color);
     $('.name', this.info_window_content).css('color', color || this.color);
-    saveLocations();
   },
   updateContent: function(){
     this.offset = parseInt(this.marker.timezone.rawOffset);
@@ -104,11 +102,9 @@ LocationRow = $.klass({
     $('table#locations thead, table#locations tfoot').show();
 
     this.updateTime();
-    saveLocations();
   },
   updateAddress: function(address){
     updateInfoWindowContent(this.marker, this.info_window, {address: address});
-    saveLocations();
   },
   setAsReference: function(){
     this.is_reference = true;
@@ -119,7 +115,6 @@ LocationRow = $.klass({
     $(this.element).remove();
     this.marker.setMap(null);
     delete locationsArray[this.id];
-    saveLocations();
   }
 });
 
@@ -192,6 +187,9 @@ $(document).ready(function(){
     $('#realtime').attr('checked', 'checked').trigger('change');
   });
 
+  window.onbeforeunload = function(){
+    saveLocations();
+  }
 });
 
 // function to calculate local time
@@ -213,7 +211,6 @@ function saveLocations() {
                                   name: element.name})
   });
   cookie_value = JSON.stringify(cookie_locations_array);
-  log(cookie_value);
   $.cookie('map-locations', cookie_value, { expires: 30 } );
 }
 
