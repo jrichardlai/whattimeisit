@@ -92,7 +92,7 @@ LocationRow = $.klass({
     $('.name', this.info_window_content).css('color', color || this.color);
   },
   updateContent: function(){
-    this.offset = parseInt(this.marker.timezone.rawOffset);
+    this.offset = parseInt(this.marker.timezone.dstOffset);
 
     $('.name input', this.element).val(this.name);
     $('.address input', this.element).val(this.marker.address);
@@ -199,7 +199,7 @@ $(document).ready(function(){
 function calcTime(offset) {
   var d = new Date();
   var utc = d.getTime() + (d.getTimezoneOffset() * 60000);
-  var nd = new Date(utc + (3600000*offset));
+  var nd = new Date(utc + (3600000 * offset));
   return nd;
 }
 
@@ -277,7 +277,7 @@ function updateInfoWindowContent(marker, info_window, geocoder_options) {
 }
 
 function displayTimezone(timezone) {
-  offset = parseInt(timezone.rawOffset)
+  offset = parseInt(timezone.dstOffset)
   offset = offset > 0 ? '+' + offset : offset
   return timezone.timezoneId +  ', GMT' + offset
 }
